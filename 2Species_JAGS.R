@@ -188,18 +188,14 @@ library(ggpubr)
             
           } 
         '
-    jags.data <- list("y1" = y1,
-                      "y2" = y2, 
+    jags.data <- list("y1" = y1, "y2" = y2, 
                       "species" = species, 
-                      "D" = D,
-                      "A" = A,
-                      "R" = R, 
-                      "max.T" = max.T,
+                      "D" = D, "A" = A,
+                      "R" = R,  "max.T" = max.T,
                       "R_zeros" = R_zeros,
                       "R.diag" = R.diag,
                       "culls" = cull, 
-                      "Z" = Z,
-                      "no.c" = no.c
+                      "Z" = Z, "no.c" = no.c
     )
     
     jags.inits <- function(){list(N1 = apply(y1, MARGIN = 1, FUN = max)+1,
@@ -218,7 +214,7 @@ library(ggpubr)
                    "totalN",
                    "p.cull"
     )
-    tictoc::tic()
+    
     mod1 <- jags(data = jags.data, inits = jags.inits,
                  parameters.to.save=jags.pars,
                  model.file = textConnection(JagsMod.Royle),
@@ -227,118 +223,4 @@ library(ggpubr)
                  n.chains = 4,
                  n.thin = 1
     )
-    tictoc::toc()
     
-#### Visualising Priors ----
-  m1 <- mod1$BUGSoutput$sims.matrix
-  post.samples <- as_tibble(m1)
-    
-  # plot detection probability parameter
-  ggplot(post.samples, aes(x = `p[1]`)) +
-    stat_halfeye() +
-    geom_vline(xintercept = p1, colour = "blue", linetype = "dashed") +
-    theme_classic()
-    
-  ggplot(post.samples, aes(x = `lambda[1,1]`)) +
-    stat_halfeye() +
-    geom_vline(xintercept = lambda1[1], colour = "blue", linetype = "dashed") +
-    theme_classic()
-    
-  ggplot(post.samples, aes(x = `lambda[2,1]`)) +
-    stat_halfeye() +
-    geom_vline(xintercept = lambda2[1], colour = "blue", linetype = "dashed") +
-    theme_classic()
-    
-  ggplot(post.samples, aes(x = `alpha`)) +
-    stat_halfeye() +
-    geom_vline(xintercept = alpha.spatial, colour = "blue", linetype = "dashed") +
-    theme_classic()
-    
-  ggplot(post.samples, aes(x = `tau.s[1]`)) +
-    stat_halfeye() +
-    geom_vline(xintercept = tau.spatial[1], colour = "blue", linetype = "dashed") +
-    theme_classic()
-    
-  quantiles.samples <- apply(X = post.samples, MARGIN = 2, FUN = quantile, probs = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.975, 0.995, 1))
-    
-  p1.quantiles <- quantiles.samples[ , grepl("^p\\[1]$", colnames(quantiles.samples))]
-  p1.quantiles <- c(p1.quantiles, p1)
-  p1.quantiles <- as.data.frame(t(p1.quantiles))
-  colnames(p1.quantiles)[9] <- "Actual"
-  sum(p1.quantiles$Actual > p1.quantiles$`2.5%` & p1.quantiles$Actual < p1.quantiles$`97.5%`)
-  p1.quantiles$Variable <- "p1"
-  
-  ggplot(p1.quantiles, aes(x = Variable)) + 
-    geom_linerange(aes(ymin = `2.5%`, ymax = `97.5%`)) + 
-    geom_point(aes(y=`50%`)) + 
-    geom_point(aes(y=Actual), color = "red", shape = 8) + 
-    labs(x="", y = "") + 
-    theme_classic()
-  
-  p2.quantiles <- quantiles.samples[ , grepl("^p\\[2]$", colnames(quantiles.samples))]
-  p2.quantiles <- c(p2.quantiles, p2)
-  p2.quantiles <- as.data.frame(t(p2.quantiles))
-  colnames(p2.quantiles)[9] <- "Actual"
-  sum(p2.quantiles$Actual > p2.quantiles$`2.5%` & p2.quantiles$Actual < p2.quantiles$`97.5%`)
-  p2.quantiles$Variable <- "p2"
-  
-  ggplot(p2.quantiles, aes(x = Variable)) + 
-    geom_linerange(aes(ymin = `2.5%`, ymax = `97.5%`)) + 
-    geom_point(aes(y=`50%`)) + 
-    geom_point(aes(y=Actual), color = "red", shape = 8) + 
-    labs(x="", y = "") + 
-    theme_classic()
-  
-  p.cull.q <- quantiles.samples[ , grepl("^p.cull", colnames(quantiles.samples))]
-  
-  p.cull.1 <- p.cull.q[,1:no.c]
-  p.cull.1 <- rbind(p.cull.1, cull.p[,1])
-  p.cull.1 <- as.data.frame(t(p.cull.1))
-  colnames(p.cull.1)[9] <- "Actual"
-  sum(p.cull.1$Actual > p.cull.1$`2.5%` & p.cull.1$Actual < p.cull.1$`97.5%`)
-  p.cull.1$Variable <- paste0("Cull Percentages ", seq(1:no.c))
-  
-  ggplot(p.cull.1, aes(x = Variable)) + 
-    geom_linerange(aes(ymin = `2.5%`, ymax = `97.5%`)) + 
-    geom_point(aes(y=`50%`)) + 
-    geom_point(aes(y=Actual), color = "red", shape = 8) + 
-    labs(x="", y = "") + 
-    theme_classic()
-  
-  p.cull.2 <- p.cull.q[, (no.c+1):(2*no.c)]
-  p.cull.2 <- rbind(p.cull.2, cull.p[,2])
-  p.cull.2 <- as.data.frame(t(p.cull.2))
-  colnames(p.cull.2)[9] <- "Actual"
-  sum(p.cull.2$Actual > p.cull.2$`2.5%` & p.cull.2$Actual < p.cull.2$`97.5%`)
-  p.cull.2$Variable <- paste0("Cull Percentages ", seq(1:no.c))
-  
-  ggplot(p.cull.2, aes(x = Variable)) + 
-    geom_linerange(aes(ymin = `2.5%`, ymax = `97.5%`)) + 
-    geom_point(aes(y=`50%`)) + 
-    geom_point(aes(y=Actual), color = "red", shape = 8) + 
-    labs(x="", y = "") + 
-    theme_classic()
-  
-  phi.q <- quantiles.samples[ , grepl("^phi\\[", colnames(quantiles.samples))]
-  phi.q <- rbind(phi.q, phi)
-  phi.q <- as.data.frame(t(phi.q))
-  colnames(phi.q)[9] <- "Actual"
-  sum(phi.q$Actual > phi.q$`2.5%` & phi.q$Actual < phi.q$`97.5%`)
-  sum(phi.q$Actual > phi.q$`2.5%` & phi.q$Actual < phi.q$`97.5%`)/nrow(phi.q)
-  mean(phi.q$Actual - phi.q$`50%`)
-  
-  BigN.q <- quantiles.samples[, grepl("^totalN", colnames(quantiles.samples))]
-  BigN.q <- rbind(BigN.q,c(sum(N1), sum(N2)))
-  BigN.q <- as.data.frame(t(BigN.q))
-  colnames(BigN.q)[9] <- "Actual"
-  sum(BigN.q$Actual > BigN.q$`2.5%` & BigN.q$Actual < BigN.q$`97.5%`)
-  BigN.q$Variable <- c("N1", "N2")
-  
-  ggplot(BigN.q, aes(x = Variable)) + 
-    geom_linerange(aes(ymin = `2.5%`, ymax = `97.5%`)) + 
-    geom_point(aes(y=`50%`)) + 
-    geom_point(aes(y=Actual), color = "red", shape = 8) + 
-    labs(x="", y = "") + 
-    theme_classic()
-  
-  
