@@ -108,7 +108,6 @@ library(ggpubr)
     }
 
 ### DATA FORMATTING FOR JAGS ----  
-  R.diag <- diag(R)
   identity.mat <- diag(species)
   y <- list()
   y[[1]] <- y1
@@ -193,7 +192,6 @@ library(ggpubr)
                       "D" = D, "A" = A,
                       "R" = R,  "max.T" = max.T,
                       "R_zeros" = R_zeros,
-                      "R.diag" = R.diag,
                       "culls" = cull, 
                       "Z" = Z, "no.c" = no.c
     )
