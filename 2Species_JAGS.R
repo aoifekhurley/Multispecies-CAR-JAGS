@@ -133,7 +133,7 @@ library(ggpubr)
               } 
             }
             
-            Q0 = (alpha*(D-A)) + ((1-alpha)*R.diag)
+            Q0 = D - alpha*A
             
             for(i in 1:(species*R)){
               ind.i[i] = ifelse(i <= R, 1, 2)
