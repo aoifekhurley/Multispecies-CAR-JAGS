@@ -17,7 +17,6 @@ library(ggpubr)
   R <- 25
   no.c <- 5
   species <- 2
-  M <- 3      # Number of Covariates
 ##### GRID -----
   x1.length <- sqrt(R)
   x1 <- seq(1:x1.length)
@@ -59,7 +58,7 @@ library(ggpubr)
   alpha.spatial <- 0.6
   tau.spatial <- c(3, 2)
   rho <- 0.2
-  # Sigma <- rinvwishart(nu = species+1, S = diag(species))
+  
   T11 <- tau.spatial[1]/(1 - rho^2)
   T12 <- (-rho*sqrt(tau.spatial[1])*sqrt(tau.spatial[2]))/(1-rho^2)
   T22 <- tau.spatial[2]/(1 - rho^2)
@@ -74,24 +73,23 @@ library(ggpubr)
     }
   }
   Q <- kronecker(Tau.matrix, D - alpha.spatial*A)
-  #Q <- kronecker(alpha.spatial*(D-A) + diag((1 - alpha.spatial), nrow = nrow(A)), solve(Sigma))
   
-  phi <- mvrnorm(n = 1, mu = rep(0, nrow(Q)), Sigma = solve(Q))
+  phi <- mvrnorm(n = 1, mu = rep(0, nrow(Q)), Sigma = solve(Q)) # Spatial Surface for both species
 
-  phi.1 <- phi[1:R]
-  phi.2 <- phi[(1+R):(2*R)] 
+  phi.1 <- phi[1:R] # Spatial Surface for species 1 
+  phi.2 <- phi[(1+R):(2*R)] # Spatial Surface for species 2
                     
   lambda1 <- exp(phi.1)
   lambda2 <- exp(phi.2)
 
-  N1 <- rpois(R, lambda1)  
-  N2 <- rpois(R, lambda2)  
+  N1 <- rpois(R, lambda1)  # Population species 1
+  N2 <- rpois(R, lambda2)  # Population species 2
 
   p1 <- 0.3
   p2 <- 0.6
 
-  y1 <- matrix(rbinom(n = R*max.T, size = N1, prob = p1), nrow = R, ncol = max.T)
-  y2 <- matrix(rbinom(n = R*max.T, size = N2, prob = p2), nrow = R, ncol = max.T)
+  y1 <- matrix(rbinom(n = R*max.T, size = N1, prob = p1), nrow = R, ncol = max.T) # Obs. species 1
+  y2 <- matrix(rbinom(n = R*max.T, size = N2, prob = p2), nrow = R, ncol = max.T) # Obs. species 2
 
   ##### CULL DATA GENERATION -----
     Z = matrix(0, nrow = R, ncol = no.c) # Matrix, 1 in column for associated county
