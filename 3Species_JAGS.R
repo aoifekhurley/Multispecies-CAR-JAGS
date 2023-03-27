@@ -184,9 +184,9 @@ library(LaplacesDemon)
                   }
                 }
                 
-                phi[c(1:(species*R))] ~ dmnorm(R_zeros, inverse(Q))
+                phi[c(1:(species*R))] ~ dmnorm(R_zeros, inverse(Q)) # Spatial Surface for 3 species
         
-                for(s in 1:species){
+                for(s in 1:species){ 
                   S[c(1:R), s] <- ifelse(s==1, 
                                          phi[c(1:R)], 
                                          ifelse(s==2,
@@ -238,18 +238,13 @@ library(LaplacesDemon)
                 
               } 
             '
-    jags.data <- list("y1" = y1,
-                      "y2" = y2, 
-                      "y3" = y3,
+    jags.data <- list("y1" = y1, "y2" = y2, "y3" = y3,
                       "species" = species, 
-                      "D" = D,
-                      "A" = A,
-                      "R" = R, 
+                      "D" = D, "A" = A, "R" = R, 
                       "max.T" = max.T,
                       "R_zeros" = R_zeros,
                       "R.diag" = R.diag,
-                      "culls" = cull, 
-                      "Z" = Z,
+                      "culls" = cull,  "Z" = Z,
                       "no.c" = no.c
     )
     
@@ -261,16 +256,12 @@ library(LaplacesDemon)
     )
     }
     
-    jags.pars <- c("p",
-                   "lambda",
-                   "phi",
+    jags.pars <- c("p", "lambda", "phi",
                    "N1", "N2", "N3",
-                   "alpha", 
-                   "tau",
-                   "totalN",
-                   "p.cull"
+                   "alpha",  "tau",
+                   "totalN", "p.cull"
     )
-    tictoc::tic()
+    
     mod1 <- jags(data = jags.data, inits = jags.inits,
                  parameters.to.save=jags.pars,
                  model.file = textConnection(JagsMod.Royle),
@@ -279,50 +270,4 @@ library(LaplacesDemon)
                  n.chains = 4,
                  n.thin = 1
     )
-    tictoc::toc()
     
-    #### Visualising Priors ----
-    m1 <- mod1$BUGSoutput$sims.matrix
-    post.samples <- as_tibble(m1)
-    
-    # plot detection probability parameter
-    ggplot(post.samples, aes(x = `p[1]`)) +
-      stat_halfeye() +
-      geom_vline(xintercept = p1, colour = "blue", linetype = "dashed") +
-      theme_classic()
-    
-    ggplot(post.samples, aes(x = `lambda[1,1]`)) +
-      stat_halfeye() +
-      geom_vline(xintercept = lambda1[1], colour = "blue", linetype = "dashed") +
-      theme_classic()
-    
-    ggplot(post.samples, aes(x = `lambda[2,1]`)) +
-      stat_halfeye() +
-      geom_vline(xintercept = lambda2[1], colour = "blue", linetype = "dashed") +
-      theme_classic()
-    
-    ggplot(post.samples, aes(x = `alpha`)) +
-      stat_halfeye() +
-      geom_vline(xintercept = alpha.spatial, colour = "blue", linetype = "dashed") +
-      theme_classic()
-    
-    ggplot(post.samples, aes(x = `tau`)) +
-      stat_halfeye() +
-      geom_vline(xintercept = tau.spatial, colour = "blue", linetype = "dashed") +
-      theme_classic()
-    
-    quantiles.samples <- apply(X = post.samples, MARGIN = 2, FUN = quantile, probs = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.975, 0.995, 1))
-    
-    p1.quantiles <- quantiles.samples[ , grepl("^p\\[1]$", colnames(quantiles.samples))]
-    p1.quantiles <- c(p1.quantiles, p1)
-    p1.quantiles <- as.data.frame(t(p1.quantiles))
-    colnames(p1.quantiles)[9] <- "Actual"
-    sum(p1.quantiles$Actual > p1.quantiles$`2.5%` & p1.quantiles$Actual < p1.quantiles$`97.5%`)
-    p1.quantiles$Variable <- "p1"
-    
-    ggplot(p1.quantiles, aes(x = Variable)) + 
-      geom_linerange(aes(ymin = `2.5%`, ymax = `97.5%`)) + 
-      geom_point(aes(y=`50%`)) + 
-      geom_point(aes(y=Actual), color = "red", shape = 8) + 
-      labs(x="", y = "") + 
-      theme_classic()
